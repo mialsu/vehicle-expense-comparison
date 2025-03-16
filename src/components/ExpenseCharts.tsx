@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Card, Form } from 'react-bootstrap';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, TooltipProps } from 'recharts';
 import { Vehicle, ExpenseCalculation } from '../types';
 import { formatCurrency } from '../utils/formatters';
 
@@ -18,13 +18,76 @@ const CHART_COLORS = [
 
 interface YearData {
   year: number;
-  [vehicleName: string]: number;
+  [key: string]: number | string;
 }
 
 interface CategoryData {
   category: string;
-  [vehicleName: string]: string | number;
+  [key: string]: string | number;
 }
+
+// Create a mapping between vehicle ID and display name
+interface VehicleMapping {
+  id: string;
+  name: string;
+  color: string;
+}
+
+// Create a custom tooltip component
+const CustomTooltip = ({ active, payload, label }: TooltipProps<number, string>) => {
+  if (!active || !payload || payload.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="custom-tooltip" style={{ backgroundColor: 'white', padding: '10px', border: '1px solid #ccc', borderRadius: '5px' }}>
+      <p className="label" style={{ margin: 0 }}>{`Year: ${label}`}</p>
+      {payload.map((entry, index) => {
+        // Extract the vehicle ID from the dataKey (format: "id_VEHICLE_ID")
+        const idMatch = entry.dataKey?.toString().match(/^id_(.+)$/);
+        if (idMatch) {
+          const vehicleId = idMatch[1];
+          // Find the vehicle name from the payload data
+          const vehicleName = entry.payload[`name_${vehicleId}`];
+          return (
+            <p key={index} style={{ margin: 0, color: entry.color }}>
+              {`${vehicleName}: ${formatCurrency(entry.value as number)}`}
+            </p>
+          );
+        }
+        return null;
+      })}
+    </div>
+  );
+};
+
+// Create a custom tooltip component for the bar chart
+const CategoryTooltip = ({ active, payload, label }: TooltipProps<number, string>) => {
+  if (!active || !payload || payload.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="custom-tooltip" style={{ backgroundColor: 'white', padding: '10px', border: '1px solid #ccc', borderRadius: '5px' }}>
+      <p className="label" style={{ margin: 0, fontWeight: 'bold' }}>{`${label}`}</p>
+      {payload.map((entry, index) => {
+        // Extract the vehicle ID from the dataKey (format: "id_VEHICLE_ID")
+        const idMatch = entry.dataKey?.toString().match(/^id_(.+)$/);
+        if (idMatch) {
+          const vehicleId = idMatch[1];
+          // Find the vehicle name from the payload data
+          const vehicleName = entry.payload[`name_${vehicleId}`];
+          return (
+            <p key={index} style={{ margin: 0, color: entry.color }}>
+              {`${vehicleName}: ${formatCurrency(entry.value as number)}`}
+            </p>
+          );
+        }
+        return null;
+      })}
+    </div>
+  );
+};
 
 const ExpenseCharts: React.FC<ExpenseChartsProps> = ({ vehicles, calculations }) => {
   const [chartType, setChartType] = useState<'cumulative' | 'total'>('cumulative');
@@ -38,6 +101,13 @@ const ExpenseCharts: React.FC<ExpenseChartsProps> = ({ vehicles, calculations })
     .filter((item): item is { vehicle: Vehicle; calculation: ExpenseCalculation } => 
       item.calculation !== null
     );
+
+  // Create a mapping of vehicle IDs to names and colors
+  const vehicleMappings: VehicleMapping[] = validVehiclesWithCalculations.map((item, index) => ({
+    id: item.vehicle.id,
+    name: item.vehicle.name,
+    color: CHART_COLORS[index % CHART_COLORS.length]
+  }));
 
   // Prepare data for cumulative expenses chart
   const prepareCumulativeData = () => {
@@ -57,7 +127,10 @@ const ExpenseCharts: React.FC<ExpenseChartsProps> = ({ vehicles, calculations })
           // Calculate cumulative cost up to this year
           const yearlyNetCost = calculation.netCost / vehicle.ownershipPeriod;
           const cumulativeCost = year === 0 ? 0 : yearlyNetCost * year;
-          yearData[vehicle.name] = Math.round(cumulativeCost);
+          // Use vehicle ID as the key instead of name
+          yearData[`id_${vehicle.id}`] = Math.round(cumulativeCost);
+          // Also store the vehicle name for tooltip display
+          yearData[`name_${vehicle.id}`] = vehicle.name;
         }
       });
 
@@ -114,7 +187,10 @@ const ExpenseCharts: React.FC<ExpenseChartsProps> = ({ vehicles, calculations })
             break;
         }
 
-        categoryData[vehicle.name] = Math.round(value);
+        // Use vehicle ID as the key instead of name
+        categoryData[`id_${vehicle.id}`] = Math.round(value);
+        // Also store the vehicle name for tooltip display
+        categoryData[`name_${vehicle.id}`] = vehicle.name;
       });
 
       return categoryData;
@@ -127,9 +203,6 @@ const ExpenseCharts: React.FC<ExpenseChartsProps> = ({ vehicles, calculations })
   const handleChartTypeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setChartType(e.target.value as 'cumulative' | 'total');
   };
-
-  // Custom tooltip formatter for currency values
-  const currencyTooltipFormatter = (value: number) => formatCurrency(value);
 
   // If we don't have any valid data, show a message
   if (validVehiclesWithCalculations.length === 0) {
@@ -188,16 +261,21 @@ const ExpenseCharts: React.FC<ExpenseChartsProps> = ({ vehicles, calculations })
                   label={{ value: 'Year', position: 'insideBottomRight', offset: -10 }} 
                 />
                 <YAxis 
-                  tickFormatter={currencyTooltipFormatter}
+                  tickFormatter={(value) => formatCurrency(value)}
                 />
-                <Tooltip formatter={currencyTooltipFormatter} />
-                <Legend />
-                {validVehiclesWithCalculations.map((item, index) => (
+                <Tooltip content={<CustomTooltip />} />
+                <Legend formatter={(value, entry) => {
+                  // Find the vehicle mapping by color
+                  const mapping = vehicleMappings.find(m => m.color === entry.color);
+                  return mapping ? mapping.name : value;
+                }} />
+                {vehicleMappings.map((mapping) => (
                   <Line
-                    key={item.vehicle.id}
+                    key={mapping.id}
                     type="monotone"
-                    dataKey={item.vehicle.name}
-                    stroke={CHART_COLORS[index % CHART_COLORS.length]}
+                    dataKey={`id_${mapping.id}`}
+                    stroke={mapping.color}
+                    name={mapping.name} // Use the name directly for better accessibility
                     activeDot={{ r: 8 }}
                   />
                 ))}
@@ -210,15 +288,20 @@ const ExpenseCharts: React.FC<ExpenseChartsProps> = ({ vehicles, calculations })
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="category" />
                 <YAxis 
-                  tickFormatter={currencyTooltipFormatter}
+                  tickFormatter={(value) => formatCurrency(value)}
                 />
-                <Tooltip formatter={currencyTooltipFormatter} />
-                <Legend />
-                {validVehiclesWithCalculations.map((item, index) => (
+                <Tooltip content={<CategoryTooltip />} />
+                <Legend formatter={(value, entry) => {
+                  // Find the vehicle mapping by color
+                  const mapping = vehicleMappings.find(m => m.color === entry.color);
+                  return mapping ? mapping.name : value;
+                }} />
+                {vehicleMappings.map((mapping) => (
                   <Bar
-                    key={item.vehicle.id}
-                    dataKey={item.vehicle.name}
-                    fill={CHART_COLORS[index % CHART_COLORS.length]}
+                    key={mapping.id}
+                    dataKey={`id_${mapping.id}`}
+                    fill={mapping.color}
+                    name={mapping.name} // Use the name directly for better accessibility
                   />
                 ))}
               </BarChart>
