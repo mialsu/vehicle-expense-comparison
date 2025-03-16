@@ -22,10 +22,6 @@ A web application for comparing the total cost of ownership between different ve
 - Customizable fuel prices and annual distance
 - Separate ownership period from loan/lease terms
 
-## Screenshots
-
-(Add screenshots here)
-
 ## Installation
 
 1. Clone the repository:
@@ -75,4 +71,4 @@ MIT
 
 ## Author
 
-Your Name
+Miska Sulander
