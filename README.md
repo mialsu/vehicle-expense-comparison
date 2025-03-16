@@ -26,7 +26,7 @@ A web application for comparing the total cost of ownership between different ve
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/vehicle-expense-comparison.git
+git clone https://github.com/mialsu/vehicle-expense-comparison.git
 cd vehicle-expense-comparison
 ```
 
