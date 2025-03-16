@@ -35,12 +35,12 @@ const VehicleModal: React.FC<VehicleModalProps> = ({
   title 
 }) => {
   const [vehicle, setVehicle] = useState<Vehicle>({ ...defaultVehicle, id: uuidv4() });
-  const [loanInterestRate, setLoanInterestRate] = useState<number>(3.5);
-  const [loanMonthlyFee, setLoanMonthlyFee] = useState<number>(0);
-  const [loanStartFee, setLoanStartFee] = useState<number>(200);
-  const [loanTermMonths, setLoanTermMonths] = useState<number>(36);
-  const [leaseMonthlyPayment, setLeaseMonthlyPayment] = useState<number>(0);
-  const [leaseTermMonths, setLeaseTermMonths] = useState<number>(36);
+  const [loanInterestRate, setLoanInterestRate] = useState<number | string>(3.5);
+  const [loanMonthlyFee, setLoanMonthlyFee] = useState<number | string>(0);
+  const [loanStartFee, setLoanStartFee] = useState<number | string>(200);
+  const [loanTermMonths, setLoanTermMonths] = useState<number | string>(36);
+  const [leaseMonthlyPayment, setLeaseMonthlyPayment] = useState<number | string>(0);
+  const [leaseTermMonths, setLeaseTermMonths] = useState<number | string>(36);
 
   useEffect(() => {
     if (initialVehicle) {
@@ -140,41 +140,39 @@ const VehicleModal: React.FC<VehicleModalProps> = ({
         ...prev,
         [name]: name === 'name' || name === 'fuelType' || name === 'paymentMethod' 
           ? value 
-          : Number(value)
+          : value === '' ? '' : Number(value) // Allow empty string during editing
       }));
     }
   };
 
   const handleLoanDetailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    const numValue = Number(value);
     
     switch(name) {
       case 'loanInterestRate':
-        setLoanInterestRate(numValue);
+        setLoanInterestRate(value === '' ? '' : Number(value));
         break;
       case 'loanMonthlyFee':
-        setLoanMonthlyFee(numValue);
+        setLoanMonthlyFee(value === '' ? '' : Number(value));
         break;
       case 'loanStartFee':
-        setLoanStartFee(numValue);
+        setLoanStartFee(value === '' ? '' : Number(value));
         break;
       case 'loanTermMonths':
-        setLoanTermMonths(numValue);
+        setLoanTermMonths(value === '' ? '' : Number(value));
         break;
     }
   };
 
   const handleLeaseDetailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    const numValue = Number(value);
     
     switch(name) {
       case 'leaseMonthlyPayment':
-        setLeaseMonthlyPayment(numValue);
+        setLeaseMonthlyPayment(value === '' ? '' : Number(value));
         break;
       case 'leaseTermMonths':
-        setLeaseTermMonths(numValue);
+        setLeaseTermMonths(value === '' ? '' : Number(value));
         break;
     }
   };
@@ -185,21 +183,28 @@ const VehicleModal: React.FC<VehicleModalProps> = ({
     // Create a copy of the vehicle with updated payment details
     const updatedVehicle = { ...vehicle };
     
+    // Convert any empty string values to 0 before saving
+    for (const key in updatedVehicle) {
+      if (updatedVehicle[key as keyof Vehicle] === '') {
+        (updatedVehicle as any)[key] = 0;
+      }
+    }
+    
     if (updatedVehicle.paymentMethod === 'loan') {
       // Add loan details to the vehicle object
-      updatedVehicle.loanInterestRate = loanInterestRate;
-      updatedVehicle.loanMonthlyFee = loanMonthlyFee;
-      updatedVehicle.loanStartFee = loanStartFee;
-      updatedVehicle.loanTermMonths = loanTermMonths;
+      updatedVehicle.loanInterestRate = typeof loanInterestRate === 'string' ? 0 : loanInterestRate;
+      updatedVehicle.loanMonthlyFee = typeof loanMonthlyFee === 'string' ? 0 : loanMonthlyFee;
+      updatedVehicle.loanStartFee = typeof loanStartFee === 'string' ? 0 : loanStartFee;
+      updatedVehicle.loanTermMonths = typeof loanTermMonths === 'string' ? 0 : loanTermMonths;
       
       // Create loan details for calculation
       const loanDetails: LoanDetails = {
         loanAmount: updatedVehicle.loanAmount,
-        interestRate: loanInterestRate,
-        loanTermMonths: loanTermMonths,
+        interestRate: typeof loanInterestRate === 'string' ? 0 : loanInterestRate,
+        loanTermMonths: typeof loanTermMonths === 'string' ? 0 : loanTermMonths,
         monthlyPayment: 0, // Will be calculated
-        monthlyFee: loanMonthlyFee,
-        startFee: loanStartFee
+        monthlyFee: typeof loanMonthlyFee === 'string' ? 0 : loanMonthlyFee,
+        startFee: typeof loanStartFee === 'string' ? 0 : loanStartFee
       };
       
       // Calculate loan to get monthly payment
@@ -213,8 +218,8 @@ const VehicleModal: React.FC<VehicleModalProps> = ({
       updatedVehicle.leaseTermMonths = undefined;
     } else if (updatedVehicle.paymentMethod === 'lease') {
       // Add lease details to the vehicle object
-      updatedVehicle.leaseMonthlyPayment = leaseMonthlyPayment;
-      updatedVehicle.leaseTermMonths = leaseTermMonths;
+      updatedVehicle.leaseMonthlyPayment = typeof leaseMonthlyPayment === 'string' ? 0 : leaseMonthlyPayment;
+      updatedVehicle.leaseTermMonths = typeof leaseTermMonths === 'string' ? 0 : leaseTermMonths;
       
       // Clear loan details
       updatedVehicle.loanInterestRate = undefined;
