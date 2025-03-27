@@ -60,7 +60,9 @@ const LoanComparisonTable: React.FC<LoanComparisonTableProps> = ({
                 <td>Loan Term</td>
                 {vehiclesWithLoans.map(item => (
                   <td key={`loan-term-${item.vehicle!.id}`}>
-                    {item.vehicle!.ownershipPeriod} years ({item.vehicle!.ownershipPeriod * 12} months)
+                    {item.vehicle!.loanTermMonths ? 
+                      `${(item.vehicle!.loanTermMonths / 12).toFixed(1)} years (${item.vehicle!.loanTermMonths} months)` : 
+                      `${item.vehicle!.ownershipPeriod} years (${item.vehicle!.ownershipPeriod * 12} months)`}
                   </td>
                 ))}
               </tr>
@@ -107,15 +109,23 @@ const LoanComparisonTable: React.FC<LoanComparisonTableProps> = ({
                 <td colSpan={vehiclesWithLoans.length + 1}><strong>Payment Details</strong></td>
               </tr>
               <tr>
-                <td>Monthly Payment (Principal + Interest)</td>
+                <td>Principal Payment</td>
                 {vehiclesWithLoans.map(item => (
-                  <td key={`monthly-payment-${item.vehicle!.id}`}>
-                    {formatCurrency(item.calculation!.monthlyPayment)}
+                  <td key={`principal-payment-${item.vehicle!.id}`}>
+                    {formatCurrency(item.calculation!.monthlyPayment - (item.calculation!.totalInterest / (item.vehicle!.loanTermMonths || item.vehicle!.ownershipPeriod * 12)))}
                   </td>
                 ))}
               </tr>
               <tr>
-                <td>Total Monthly Payment (incl. Fee)</td>
+                <td>Interest + Fees</td>
+                {vehiclesWithLoans.map(item => (
+                  <td key={`interest-fees-${item.vehicle!.id}`}>
+                    {formatCurrency((item.calculation!.totalInterest / (item.vehicle!.loanTermMonths || item.vehicle!.ownershipPeriod * 12)) + (item.vehicle!.loanMonthlyFee || 0))}
+                  </td>
+                ))}
+              </tr>
+              <tr className="table-info">
+                <td><strong>Total Monthly Payment</strong></td>
                 {vehiclesWithLoans.map(item => (
                   <td key={`total-monthly-${item.vehicle!.id}`}>
                     <strong>{formatCurrency(item.calculation!.monthlyPayment + (item.vehicle!.loanMonthlyFee || 0))}</strong>

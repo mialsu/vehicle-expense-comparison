@@ -20,11 +20,11 @@ const defaultFuelPrices: FuelPrices = {
 };
 
 function App() {
-  const [vehicles, setVehicles] = useState<(Vehicle | null)[]>([null, null, null]);
+  const [vehicles, setVehicles] = useState<(Vehicle | null)[]>([null, null, null, null, null]);
   const [fuelPrices, setFuelPrices] = useState<FuelPrices>(defaultFuelPrices);
   const [annualDistance, setAnnualDistance] = useState<number>(15000);
-  const [calculations, setCalculations] = useState<(ExpenseCalculation | null)[]>([null, null, null]);
-  const [loanCalculations, setLoanCalculations] = useState<(LoanCalculation | null)[]>([null, null, null]);
+  const [calculations, setCalculations] = useState<(ExpenseCalculation | null)[]>([null, null, null, null, null]);
+  const [loanCalculations, setLoanCalculations] = useState<(LoanCalculation | null)[]>([null, null, null, null, null]);
 
   // Calculate expenses whenever vehicles, fuel prices, or annual distance changes
   useEffect(() => {
@@ -124,20 +124,13 @@ function App() {
       
       <Container className="py-4 mb-4">
         <Row className="mb-4">
-          <Col md={8}>
-            <VehicleList 
-              vehicles={vehicles}
-              calculations={calculations}
-              onAddVehicle={handleAddVehicle}
-              onEditVehicle={handleEditVehicle}
-              onRemoveVehicle={handleRemoveVehicle}
-            />
-          </Col>
-          <Col md={4}>
+          <Col md={6}>
             <FuelPriceSettings 
               fuelPrices={fuelPrices}
               onFuelPricesChange={setFuelPrices}
             />
+          </Col>
+          <Col md={6}>
             <Card className="mb-4">
               <Card.Header as="h5" className="text-primary-dark">Annual Distance</Card.Header>
               <Card.Body>
@@ -161,6 +154,18 @@ function App() {
                 </div>
               </Card.Body>
             </Card>
+          </Col>
+        </Row>
+
+        <Row className="mb-4">
+          <Col>
+            <VehicleList 
+              vehicles={vehicles}
+              calculations={calculations}
+              onAddVehicle={handleAddVehicle}
+              onEditVehicle={handleEditVehicle}
+              onRemoveVehicle={handleRemoveVehicle}
+            />
           </Col>
         </Row>
 
@@ -198,13 +203,19 @@ function App() {
                 <ComparisonChart 
                   vehicle1Name={validVehicles[0]?.name || ''}
                   vehicle2Name={validVehicles[1]?.name || ''}
-                  vehicle3Name={validVehicles[2]?.name || undefined}
+                  vehicle3Name={validVehicles.length > 2 ? validVehicles[2]?.name : undefined}
+                  vehicle4Name={validVehicles.length > 3 ? validVehicles[3]?.name : undefined}
+                  vehicle5Name={validVehicles.length > 4 ? validVehicles[4]?.name : undefined}
                   calculation1={validCalculations[0] || {} as ExpenseCalculation}
                   calculation2={validCalculations[1] || {} as ExpenseCalculation}
-                  calculation3={validVehicles[2] && validCalculations[2] ? validCalculations[2] : undefined}
+                  calculation3={validVehicles.length > 2 && validCalculations[2] ? validCalculations[2] : undefined}
+                  calculation4={validVehicles.length > 3 && validCalculations[3] ? validCalculations[3] : undefined}
+                  calculation5={validVehicles.length > 4 && validCalculations[4] ? validCalculations[4] : undefined}
                   ownershipPeriod1={validVehicles[0]?.ownershipPeriod || 0}
                   ownershipPeriod2={validVehicles[1]?.ownershipPeriod || 0}
-                  ownershipPeriod3={validVehicles[2]?.ownershipPeriod}
+                  ownershipPeriod3={validVehicles.length > 2 ? validVehicles[2]?.ownershipPeriod : undefined}
+                  ownershipPeriod4={validVehicles.length > 3 ? validVehicles[3]?.ownershipPeriod : undefined}
+                  ownershipPeriod5={validVehicles.length > 4 ? validVehicles[4]?.ownershipPeriod : undefined}
                 />
               </Tab>
               <Tab eventKey="charts" title="Expense Charts">

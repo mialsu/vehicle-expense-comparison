@@ -14,6 +14,8 @@ const CHART_COLORS = [
   '#8884d8', // purple
   '#82ca9d', // green
   '#ffc658', // yellow
+  '#ff8042', // orange
+  '#0088FE', // blue
 ];
 
 interface YearData {

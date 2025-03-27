@@ -62,14 +62,14 @@ const VehicleList: React.FC<VehicleListProps> = ({
 
   // Count non-null vehicles
   const vehicleCount = vehicles.filter(v => v !== null).length;
-  const canAddMore = vehicleCount < 3;
+  const canAddMore = vehicleCount < 5;
 
   return (
     <>
-      <Row className="mb-4">
+      <Row>
         {vehicles.map((vehicle, index) => 
           vehicle && (
-            <Col key={vehicle.id} md={4} className="mb-3">
+            <Col key={vehicle.id} sm={12} md={6} lg={vehicleCount <= 2 ? 6 : 4} xl={vehicleCount <= 3 ? 4 : 3} className="mb-3">
               <Card className="vehicle-card position-relative">
                 {/* Edit button positioned to overlap the top left border */}
                 <div className="position-absolute top-0 start-0" style={{ transform: 'translateY(-50%) translateX(-20%)' }}>
@@ -143,7 +143,7 @@ const VehicleList: React.FC<VehicleListProps> = ({
         )}
 
         {canAddMore && (
-          <Col md={4} className="mb-3">
+          <Col sm={12} md={6} lg={vehicleCount <= 2 ? 6 : 4} xl={vehicleCount <= 3 ? 4 : 3} className="mb-3">
             <Card className="h-100 d-flex justify-content-center align-items-center add-vehicle-card">
               <Button 
                 className="add-vehicle-btn p-3"
